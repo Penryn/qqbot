@@ -1,0 +1,43 @@
+services:
+  pmhq:
+    image: linyuchen/pmhq:latest
+    container_name: llob-pmhq
+    privileged: true
+    environment:
+      - ENABLE_HEADLESS=true      # 无头模式，节省资源
+      - AUTO_LOGIN_QQ=            # 可选：填入要自动登录的 QQ 号
+    networks:
+      - llob_net
+    volumes:
+      - qq_volume:/root/.config/QQ
+      - llob_data:/app/llonebot/data
+
+  llonebot:
+    image: linyuchen/llonebot:latest
+    container_name: llob-core
+    depends_on:
+      - pmhq
+    networks:
+      - llob_net
+    ports:
+      - "3080:3080"  # WebUI
+      - "3001:3001"  # OneBot v11 WS
+      - "3000:3000"  # OneBot v11 HTTP
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    environment:
+      - ENABLE_WEBUI=true
+      - WEBUI_PORT=3080
+      - WEBUI_TOKEN=change_me   # WebUI 登录密码（建议修改）
+    volumes:
+      - qq_volume:/root/.config/QQ
+      - llob_data:/app/llonebot/data
+
+volumes:
+  qq_volume:
+  llob_data:
+
+networks:
+  llob_net:
+    driver: bridge
+
