@@ -33,8 +33,8 @@ COMMAND_PREFIX: str = "/"
 # 生日祝福配置
 # Excel 文件路径（首行 header: name, date, group_id, user_id, message）
 BIRTHDAY_XLSX_PATH: str = os.getenv("BIRTHDAY_XLSX_PATH", "birthdays.xlsx")
-# 检查间隔（分钟），默认 30 分钟检查一次
-BIRTHDAY_CHECK_INTERVAL_MINUTES: int = int(os.getenv("BIRTHDAY_CHECK_INTERVAL_MINUTES", "30"))
+# 检查时间：仅支持 cron 表达式（5 字段），默认每日 00:05
+BIRTHDAY_CHECK_CRON: str = os.getenv("BIRTHDAY_CHECK_CRON", "5 0 * * *")
 # 默认群号（当表中没有 group_id/user_id 时作为群发目标）
 BIRTHDAY_DEFAULT_GROUP_ID: int | None = (
     int(os.getenv("BIRTHDAY_DEFAULT_GROUP_ID")) if os.getenv("BIRTHDAY_DEFAULT_GROUP_ID") else None

@@ -74,6 +74,7 @@ pip install websockets pydantic
 
 - `websockets`：异步 WebSocket 客户端
 - `pydantic`：用于把 JSON 映射为 Python 对象（可选，但更方便）
+- `croniter`：解析 cron 表达式（调度任务用）
 
 ### 3. 配置机器人
 
@@ -126,11 +127,11 @@ from bot.scheduler import Scheduler
 
 scheduler = Scheduler()
 
-# 每 5 分钟执行一次；同名任务会先被取消后重建
-scheduler.add_periodic(
-    name="heartbeat",
-    interval_seconds=300,
-    func=lambda: client.send_group_message(GID, "still alive"),
+# Cron 表达式：每日 00:05 执行
+scheduler.add_cron(
+    name="daily-report",
+    cron_expr="5 0 * * *",
+    func=lambda: client.send_group_message(GID, "report ready"),
 )
 
 # 退出时记得停止
@@ -139,7 +140,7 @@ await scheduler.stop()
 
 - `func` 需要是可等待对象（`async def` 或返回协程的 `lambda`）。  
 - 任务内部异常默认被吞掉，只在 `DEBUG=True` 时打印；如果任务很重要，建议在 `func` 内自行捕获/上报。  
-- `add_periodic` 会先执行一次 `func`，随后 `sleep(interval_seconds)` 循环；如需固定整点运行，可在 `func` 里自行判断时间或增加延时。
+- `add_cron` 支持标准 5 字段 cron 表达式。需要长期运行的任务建议放在后台捕获异常，避免意外退出。
 
 ## 生日祝福（自动发送）
 
@@ -149,5 +150,5 @@ await scheduler.stop()
    - 必填：`name`/`姓名`，`date`/`生日`/`出生日期`（格式 `YYYY-MM-DD` 或 `MM-DD` 或 Excel 日期）
    - 可选：`message`/`祝福语`
    - 群号只从环境变量读取：设置 `BIRTHDAY_DEFAULT_GROUP_ID=<群号>` 作为群发目标；表里无需填写群号，且不支持私聊。
-2. 启动机器人后会每 `BIRTHDAY_CHECK_INTERVAL_MINUTES` 分钟（默认 30）检查一次，检测当天生日并发送祝福；默认祝福语为 “生日快乐，<姓名>！”。
+2. 启动机器人后会按定时任务检查当天生日并发送祝福：使用环境变量 `BIRTHDAY_CHECK_CRON`（标准 5 字段 cron，默认每日 00:05）。默认祝福语为 “生日快乐，<姓名>！”。
 3. 当前实现仅在机器人运行期间防重复（同一进程当天只发一次），重启后当天可能再次发送。

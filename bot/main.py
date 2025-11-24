@@ -4,7 +4,7 @@ import asyncio
 import contextlib
 
 from .client import OneBotClient
-from .config import BIRTHDAY_CHECK_INTERVAL_MINUTES, DEBUG
+from .config import BIRTHDAY_CHECK_CRON, DEBUG
 from .models import MessageEvent
 from .router import CommandRouter
 from .scheduler import Scheduler
@@ -62,10 +62,10 @@ async def main() -> None:
     client = OneBotClient(on_message_event=on_event)
 
     scheduler = Scheduler()
-    # 注册生日定时任务
-    scheduler.add_periodic(
+    # 注册生日定时任务（仅使用 cron 表达式）
+    scheduler.add_cron(
         name="birthday",
-        interval_seconds=max(60, BIRTHDAY_CHECK_INTERVAL_MINUTES * 60),
+        cron_expr=BIRTHDAY_CHECK_CRON,
         func=lambda: check_and_send_birthdays(client),
     )
 
