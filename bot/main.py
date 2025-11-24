@@ -1,14 +1,17 @@
 from __future__ import annotations
 
 import asyncio
+import contextlib
 
 from .client import OneBotClient
-from .config import DEBUG
+from .config import BIRTHDAY_CHECK_INTERVAL_MINUTES, DEBUG
 from .models import MessageEvent
 from .router import CommandRouter
+from .scheduler import Scheduler
+from .scheduler.jobs.birthday import check_and_send_birthdays
 
 # 插件导入（可以在这里新增插件）
-from plugins import echo, help as help_plugin  # noqa: F401
+from plugins import echo, help as help_plugin
 
 
 router = CommandRouter()
@@ -44,7 +47,7 @@ async def handle_message_event(client: OneBotClient, event: MessageEvent) -> Non
             if DEBUG:
                 print("[main] cannot reply: unknown message_type")
 
-    await router.handle_message(event, reply)
+    await router.handle_message(event, reply, client=client)
 
 
 async def main() -> None:
@@ -58,7 +61,18 @@ async def main() -> None:
 
     client = OneBotClient(on_message_event=on_event)
 
-    await client.connect_and_run()
+    scheduler = Scheduler()
+    # 注册生日定时任务
+    scheduler.add_periodic(
+        name="birthday",
+        interval_seconds=max(60, BIRTHDAY_CHECK_INTERVAL_MINUTES * 60),
+        func=lambda: check_and_send_birthdays(client),
+    )
+
+    try:
+        await client.connect_and_run()
+    finally:
+        await scheduler.stop()
 
 
 if __name__ == "__main__":

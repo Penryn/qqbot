@@ -1,4 +1,6 @@
 .venv/
+.vscode/
+.idea/
 .env
 .serena
 __pycache__/

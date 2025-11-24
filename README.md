@@ -15,6 +15,9 @@
   - `client.py`：与 LLOneBot 建立 WebSocket 连接，收发 OneBot v11 事件/动作
   - `router.py`：简单的命令路由器
   - `models.py`：部分 OneBot v11 事件/动作的数据结构（只定义了用到的部分）
+  - `scheduler/`
+    - `base.py`：轻量定时调度器
+    - `jobs/birthday.py`：每日生日祝福任务
   - `main.py`：入口，初始化并运行机器人
 - `plugins/`
   - `__init__.py`
@@ -113,3 +116,38 @@ def setup(router: CommandRouter):
 随后在 `bot/main.py` 中引入该插件（见文件内注释）。
 
 你也可以根据自己的需要扩展 `CommandContext` 或 `CommandRouter`，比如增加权限控制、冷却时间等。
+
+## 编写定时任务
+
+项目自带一个轻量级调度器 `bot/scheduler/base.py`（通过 `from bot.scheduler import Scheduler` 导出），核心接口：
+
+```python
+from bot.scheduler import Scheduler
+
+scheduler = Scheduler()
+
+# 每 5 分钟执行一次；同名任务会先被取消后重建
+scheduler.add_periodic(
+    name="heartbeat",
+    interval_seconds=300,
+    func=lambda: client.send_group_message(GID, "still alive"),
+)
+
+# 退出时记得停止
+await scheduler.stop()
+```
+
+- `func` 需要是可等待对象（`async def` 或返回协程的 `lambda`）。  
+- 任务内部异常默认被吞掉，只在 `DEBUG=True` 时打印；如果任务很重要，建议在 `func` 内自行捕获/上报。  
+- `add_periodic` 会先执行一次 `func`，随后 `sleep(interval_seconds)` 循环；如需固定整点运行，可在 `func` 里自行判断时间或增加延时。
+
+## 生日祝福（自动发送）
+
+机器人启动后会每隔一段时间检查一次 Excel 表并在当天发送生日祝福。任务逻辑在 `bot/scheduler/jobs/birthday.py`，由 `bot/main.py` 注册到调度器。
+
+1. 准备 Excel 文件（默认 `birthdays.xlsx`，路径可通过环境变量 `BIRTHDAY_XLSX_PATH` 配置），首行作为表头，支持字段（不区分大小写，中文也行）：
+   - 必填：`name`/`姓名`，`date`/`生日`/`出生日期`（格式 `YYYY-MM-DD` 或 `MM-DD` 或 Excel 日期）
+   - 可选：`message`/`祝福语`
+   - 群号只从环境变量读取：设置 `BIRTHDAY_DEFAULT_GROUP_ID=<群号>` 作为群发目标；表里无需填写群号，且不支持私聊。
+2. 启动机器人后会每 `BIRTHDAY_CHECK_INTERVAL_MINUTES` 分钟（默认 30）检查一次，检测当天生日并发送祝福；默认祝福语为 “生日快乐，<姓名>！”。
+3. 当前实现仅在机器人运行期间防重复（同一进程当天只发一次），重启后当天可能再次发送。

@@ -30,5 +30,15 @@ BOT_SELF_ID: str | None = None
 # 命令前缀，例如：/echo
 COMMAND_PREFIX: str = "/"
 
+# 生日祝福配置
+# Excel 文件路径（首行 header: name, date, group_id, user_id, message）
+BIRTHDAY_XLSX_PATH: str = os.getenv("BIRTHDAY_XLSX_PATH", "birthdays.xlsx")
+# 检查间隔（分钟），默认 30 分钟检查一次
+BIRTHDAY_CHECK_INTERVAL_MINUTES: int = int(os.getenv("BIRTHDAY_CHECK_INTERVAL_MINUTES", "30"))
+# 默认群号（当表中没有 group_id/user_id 时作为群发目标）
+BIRTHDAY_DEFAULT_GROUP_ID: int | None = (
+    int(os.getenv("BIRTHDAY_DEFAULT_GROUP_ID")) if os.getenv("BIRTHDAY_DEFAULT_GROUP_ID") else None
+)
+
 # 是否输出 debug 日志
 DEBUG: bool = True
