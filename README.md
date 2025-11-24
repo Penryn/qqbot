@@ -162,7 +162,8 @@ await scheduler.stop()
 
 1. 准备 Excel 文件（默认 `birthdays.xlsx`，路径可通过环境变量 `BIRTHDAY_XLSX_PATH` 配置），首行作为表头，支持字段（不区分大小写，中文也行）：
    - 必填：`name`/`姓名`，`date`/`生日`/`出生日期`（格式 `YYYY-MM-DD` 或 `MM-DD` 或 Excel 日期）
-   - 文案不再从表里读取，统一使用环境变量 `BIRTHDAY_MESSAGE_TEMPLATE`（默认 “生日快乐，{name}！”）。
+   - 可选：`qq`/`user_id`/`qq号`，如填写会在群消息中艾特该 QQ。
+   - 文案不再从表里读取，统一使用环境变量 `BIRTHDAY_MESSAGE_TEMPLATE`（默认 “生日快乐，{name}！”；若有 qq 会在前面自动加 `[CQ:at,qq=...]`）。
    - 群号只从环境变量读取：设置 `BIRTHDAY_DEFAULT_GROUP_ID=<群号>` 作为群发目标；表里无需填写群号，且不支持私聊。
 2. 启动机器人后会按定时任务检查当天生日并发送祝福：使用环境变量 `BIRTHDAY_CHECK_CRON`（标准 5 字段 cron，默认每日 00:05）。祝福文案来自 `BIRTHDAY_MESSAGE_TEMPLATE`。
 3. 当前实现仅在机器人运行期间防重复（同一进程当天只发一次），重启后当天可能再次发送。

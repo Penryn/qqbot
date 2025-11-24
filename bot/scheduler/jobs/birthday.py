@@ -60,6 +60,20 @@ def _normalize_header(name: Any) -> str:
     return str(name or "").strip().lower()
 
 
+def _parse_user_id(value: Any) -> Optional[int]:
+    """Best-effort parse QQ/user_id from Excel cell."""
+
+    if value is None:
+        return None
+    # common cases: int, float, str
+    try:
+        return int(str(value).strip().split(".")[0])
+    except (ValueError, TypeError):
+        if config.DEBUG:
+            print(f"[birthday] skip invalid qq/user_id: {value!r}")
+        return None
+
+
 def load_birthdays(path: str | Path) -> List[BirthdayEntry]:
     """
     Load birthday entries from an Excel file.
@@ -67,6 +81,7 @@ def load_birthdays(path: str | Path) -> List[BirthdayEntry]:
     Expected header fields (case-insensitive, with Chinese aliases):
     - name / 姓名 (required)
     - date / 生日 / 出生日期 (required): YYYY-MM-DD or MM-DD or Excel date
+    - qq / user_id / qq号 (optional, 用于 @ 用户)
     """
 
     file_path = Path(path)
@@ -89,6 +104,7 @@ def load_birthdays(path: str | Path) -> List[BirthdayEntry]:
     aliases: Dict[str, List[str]] = {
         "name": ["name", "姓名"],
         "date": ["date", "生日", "出生日期", "出生"],
+        "user_id": ["user_id", "qq", "qq号"],
     }
 
     def col(*names: str) -> Optional[int]:
@@ -118,7 +134,18 @@ def load_birthdays(path: str | Path) -> List[BirthdayEntry]:
         month, day = md
 
         group_id = config.BIRTHDAY_DEFAULT_GROUP_ID
-        msg = config.BIRTHDAY_MESSAGE_TEMPLATE.format(name=name_val)
+        user_col = col(*aliases["user_id"])
+        if user_col is not None:
+            user_id_val = _parse_user_id(row[user_col])
+        else:
+            user_id_val = None
+
+        # 组装祝福文案并可选 @
+        base_msg = config.BIRTHDAY_MESSAGE_TEMPLATE.format(name=name_val)
+        if user_id_val:
+            msg = f"[CQ:at,qq={int(user_id_val)}] {base_msg}"
+        else:
+            msg = base_msg
 
         # 只群发：必须有默认群号
         if group_id is None:
