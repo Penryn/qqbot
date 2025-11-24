@@ -68,6 +68,7 @@ async def main() -> None:
         cron_expr=BIRTHDAY_CHECK_CRON,
         func=lambda: check_and_send_birthdays(client),
     )
+    print(f"[scheduler] job 'birthday' scheduled (cron={BIRTHDAY_CHECK_CRON})")
 
     try:
         await client.connect_and_run()

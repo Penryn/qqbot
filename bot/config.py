@@ -35,6 +35,8 @@ COMMAND_PREFIX: str = "/"
 BIRTHDAY_XLSX_PATH: str = os.getenv("BIRTHDAY_XLSX_PATH", "birthdays.xlsx")
 # 检查时间：仅支持 cron 表达式（5 字段），默认每日 00:05
 BIRTHDAY_CHECK_CRON: str = os.getenv("BIRTHDAY_CHECK_CRON", "5 0 * * *")
+# 生日祝福文案模板（使用 {name} 占位）
+BIRTHDAY_MESSAGE_TEMPLATE: str = os.getenv("BIRTHDAY_MESSAGE_TEMPLATE", "生日快乐，{name}！")
 # 默认群号（当表中没有 group_id/user_id 时作为群发目标）
 BIRTHDAY_DEFAULT_GROUP_ID: int | None = (
     int(os.getenv("BIRTHDAY_DEFAULT_GROUP_ID")) if os.getenv("BIRTHDAY_DEFAULT_GROUP_ID") else None

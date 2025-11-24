@@ -67,8 +67,6 @@ def load_birthdays(path: str | Path) -> List[BirthdayEntry]:
     Expected header fields (case-insensitive, with Chinese aliases):
     - name / 姓名 (required)
     - date / 生日 / 出生日期 (required): YYYY-MM-DD or MM-DD or Excel date
-    - user_id / qq / qq号 (optional, 私聊发送)
-    - message / 祝福语 (optional): fallback to default template
     """
 
     file_path = Path(path)
@@ -91,7 +89,6 @@ def load_birthdays(path: str | Path) -> List[BirthdayEntry]:
     aliases: Dict[str, List[str]] = {
         "name": ["name", "姓名"],
         "date": ["date", "生日", "出生日期", "出生"],
-        "message": ["message", "祝福语", "祝福"],
     }
 
     def col(*names: str) -> Optional[int]:
@@ -120,12 +117,8 @@ def load_birthdays(path: str | Path) -> List[BirthdayEntry]:
             continue
         month, day = md
 
-        msg_col = col(*aliases["message"])
-
-        message_val = row[msg_col] if msg_col is not None else None
-
         group_id = config.BIRTHDAY_DEFAULT_GROUP_ID
-        msg = str(message_val) if message_val is not None else f"生日快乐，{name_val}！"
+        msg = config.BIRTHDAY_MESSAGE_TEMPLATE.format(name=name_val)
 
         # 只群发：必须有默认群号
         if group_id is None:

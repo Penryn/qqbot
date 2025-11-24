@@ -8,6 +8,20 @@
 
 > 说明：这里的代码在容器中未实际运行，请在你本机安装依赖并测试。
 
+## Docker 一键运行（含 LLOneBot + 机器人）
+
+1. 复制 `.env.example` 为 `.env` 并填写 `ONEBOT_WS_URL`（compose 默认已指向 `ws://llonebot:3001`）、`ONEBOT_ACCESS_TOKEN`、`BIRTHDAY_*` 配置。
+2. 确保有生日表 `birthdays.xlsx`（会以只读方式挂载到容器）。
+3. 启动全部服务（QQ 客户端 + LLOneBot + 机器人）：
+
+```bash
+docker compose -f docker-compose.llonebot.yml up --build -d
+```
+
+启动后：
+- WebUI: http://localhost:3080 （登录密码见 compose 文件 `WEBUI_TOKEN`）
+- 机器人容器会读取 `.env` 环境变量，通过 `ONEBOT_WS_URL` 连接 `llonebot` 服务。
+
 ## 目录结构
 
 - `bot/`
@@ -148,7 +162,7 @@ await scheduler.stop()
 
 1. 准备 Excel 文件（默认 `birthdays.xlsx`，路径可通过环境变量 `BIRTHDAY_XLSX_PATH` 配置），首行作为表头，支持字段（不区分大小写，中文也行）：
    - 必填：`name`/`姓名`，`date`/`生日`/`出生日期`（格式 `YYYY-MM-DD` 或 `MM-DD` 或 Excel 日期）
-   - 可选：`message`/`祝福语`
+   - 文案不再从表里读取，统一使用环境变量 `BIRTHDAY_MESSAGE_TEMPLATE`（默认 “生日快乐，{name}！”）。
    - 群号只从环境变量读取：设置 `BIRTHDAY_DEFAULT_GROUP_ID=<群号>` 作为群发目标；表里无需填写群号，且不支持私聊。
-2. 启动机器人后会按定时任务检查当天生日并发送祝福：使用环境变量 `BIRTHDAY_CHECK_CRON`（标准 5 字段 cron，默认每日 00:05）。默认祝福语为 “生日快乐，<姓名>！”。
+2. 启动机器人后会按定时任务检查当天生日并发送祝福：使用环境变量 `BIRTHDAY_CHECK_CRON`（标准 5 字段 cron，默认每日 00:05）。祝福文案来自 `BIRTHDAY_MESSAGE_TEMPLATE`。
 3. 当前实现仅在机器人运行期间防重复（同一进程当天只发一次），重启后当天可能再次发送。

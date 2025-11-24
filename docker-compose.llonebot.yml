@@ -33,6 +33,22 @@ services:
       - qq_volume:/root/.config/QQ
       - llob_data:/app/llonebot/data
 
+  qqbot:
+    build: .
+    container_name: qqbot
+    depends_on:
+      - llonebot
+    networks:
+      - llob_net
+    env_file:
+      - .env
+    environment:
+      # 覆盖默认，指向同一网络内的 llonebot 服务
+      - ONEBOT_WS_URL=ws://llonebot:3001
+    volumes:
+      - ./birthdays.xlsx:/app/birthdays.xlsx:ro
+    command: ["python", "-m", "bot.main"]
+
 volumes:
   qq_volume:
   llob_data:
@@ -40,4 +56,3 @@ volumes:
 networks:
   llob_net:
     driver: bridge
-
